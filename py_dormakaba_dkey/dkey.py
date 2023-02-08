@@ -64,6 +64,15 @@ DEFAULT_ATTEMPTS = 3
 ACTIVATION_CODE_ALLOWED = "BCDFGHJKLMNPQRSTVWXZ0123456789"
 
 
+def device_filter(advertisement_data: AdvertisementData) -> bool:
+    """Return True if the device is supported."""
+    uuids = advertisement_data.service_uuids
+    if SERVICE_UUID in uuids or CHARACTERISTIC_UUID_TO_SERVER in uuids:
+        return True
+
+    return False
+
+
 class BaseProcedure(ABC):
     """Base class for procedures."""
 
