@@ -927,7 +927,7 @@ class DKEYLock:
         if identification.protocol_version != 27:
             raise UnsupportedProtocolVersion(identification.protocol_version)
         self.device_info.sw_version = identification.sw_version
-        self.device_info.device_id = f"{identification.key_holder_id!r}"
+        self.device_info.device_id = f"{identification.key_holder_id.hex()}"
 
     def on_lock_type_name(self, type_name: cmds.DetTypeNameCmd) -> None:
         """Handle type and name of the lock."""

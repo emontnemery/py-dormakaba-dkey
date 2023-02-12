@@ -348,7 +348,7 @@ class AssociationParametersCmd(Command):
 
     def __str__(self) -> str:
         return (
-            f"{self.__class__.__name__} key_holder_id: {self.key_holder_id!r}, "
+            f"{self.__class__.__name__} key_holder_id: {self.key_holder_id.hex()}, "
             f"secret: {self.secret.hex()}"
         )
 
@@ -498,7 +498,7 @@ class DetTypeNameCmd(Command):
             initialized = None
         door_type = DoorType(door_type)
         side = DetectorSide(side)
-        device_name = device_name_bytes.decode("ISO_8859_1")
+        device_name = device_name_bytes.decode("ISO_8859_1").split("\x00")[0]
         return cls(device_id, door_type, side, device_name, key_features, initialized)
 
 
@@ -833,7 +833,9 @@ class RequestChallengeCmd(Command):
         return cls(1, bytes.fromhex("fffffffe"))
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__} ver:{self.ver}, id:{self.key_holder_id!r}"
+        return (
+            f"{self.__class__.__name__} ver:{self.ver}, id:{self.key_holder_id.hex()}"
+        )
 
     @property
     def as_bytes(self) -> bytes:
@@ -964,9 +966,9 @@ class GetIdentificationRsp(Command):
     def __str__(self) -> str:
         return (
             f"{self.__class__.__name__} protocol_ver: {self.protocol_version}, sw_ver:"
-            f" {self.sw_version} , key_holder_id: {self.key_holder_id!r}, has_cookie:"
-            f" {self.has_cookie}, user_id: {self.user_id!r}, device_type: "
-            f"{self.device_type.name}"
+            f" {self.sw_version} , key_holder_id: {self.key_holder_id.hex()}, "
+            f"has_cookie: {self.has_cookie}, user_id: {self.user_id.hex()}, "
+            f"device_type: {self.device_type.name}"
         )
 
     @property
