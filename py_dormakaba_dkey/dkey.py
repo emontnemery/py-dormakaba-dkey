@@ -494,7 +494,7 @@ class DKEYLock:
         self._secret = association_data.secret
 
     @staticmethod
-    def _validate_activate_code(activation_code: str) -> str:
+    def _validate_activation_code(activation_code: str) -> str:
         """Validate the activation code, raises if it's not valid."""
         trans = str.maketrans("", "", "- \t")
         activation_code = activation_code.translate(trans)
@@ -506,7 +506,7 @@ class DKEYLock:
     async def associate(self, activation_code: str) -> AssociationData:
         """Associate with the lock."""
         _LOGGER.debug("%s: Associate %s", self.name, activation_code)
-        activation_code = self._validate_activate_code(activation_code)
+        activation_code = self._validate_activation_code(activation_code)
         associate_proc = AssociateProcedure(self, activation_code)
         if (
             not await self._execute(associate_proc)
