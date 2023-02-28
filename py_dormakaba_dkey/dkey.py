@@ -394,6 +394,17 @@ class UnlockProcedure(BaseProcedure):
         return True
 
 
+class NullProcedure(BaseProcedure):
+    """Do nothing."""
+
+    enable_notifications = True
+    need_auth = True
+
+    async def execute(self) -> bool:
+        """Execute the procedure"""
+        return True
+
+
 class DKEYLock:
     """Manage a Dormakaba DKEY lock."""
 
@@ -569,10 +580,11 @@ class DKEYLock:
         unlock_proc = UnlockProcedure(self)
         return await self._execute(unlock_proc)
 
-    async def update(self) -> None:
+    async def update(self) -> bool:
         """Update the lock's status."""
         _LOGGER.debug("%s: Update", self.name)
-        await self._enable_notifications()
+        null_proc = NullProcedure(self)
+        return await self._execute(null_proc)
 
     @retry_bluetooth_connection_error(DEFAULT_ATTEMPTS)  # type: ignore[misc]
     async def _execute(self, procedure: BaseProcedure) -> bool:
@@ -601,18 +613,6 @@ class DKEYLock:
             except DkeyError:
                 self._disconnect(DisconnectReason.ERROR)
                 raise
-
-    async def _enable_notifications(self) -> None:
-        """Enable notifications."""
-        if self._procedure_lock.locked():
-            _LOGGER.debug(
-                "%s: Procedure already in progress, waiting for it to complete; "
-                "RSSI: %s",
-                self.name,
-                self.rssi,
-            )
-        async with self._procedure_lock:
-            await self._enable_notifications_when_locked()
 
     async def _enable_notifications_when_locked(self) -> None:
         """Enable notifications."""
