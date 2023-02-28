@@ -52,10 +52,10 @@ CHARACTERISTIC_UUID_TO_SERVER = "e7a60001-6639-429f-94fd-86de8ea26897"
 CHARACTERISTIC_UUID_FROM_SERVER = "e7a60002-6639-429f-94fd-86de8ea26897"
 
 # Enable to debug framing and deframing of commands
-DEBUG_COMMAND_FRAMING = False
+DEBUG_COMMAND_FRAMING = True
 
 # Enable to debug decrypt/encrypt of commands
-DEBUG_COMMAND_CRYPT = False
+DEBUG_COMMAND_CRYPT = True
 
 DISCONNECT_DELAY = 30
 
@@ -741,6 +741,14 @@ class DKEYLock:
 
     async def _execute_disconnect(self, reason: DisconnectReason) -> None:
         """Execute disconnection."""
+        _LOGGER.debug("%s: Execute disconnect", self.name)
+        if self._connect_lock.locked():
+            _LOGGER.debug(
+                "%s: Connection already in progress, waiting for it to complete; "
+                "RSSI: %s",
+                self.name,
+                self.rssi,
+            )
         async with self._connect_lock:
             client = self._client
             self._client = None
@@ -750,6 +758,7 @@ class DKEYLock:
                 await client.stop_notify(CHARACTERISTIC_UUID_FROM_SERVER)
                 await client.disconnect()
             self._reset(reason)
+        _LOGGER.debug("%s: Execute disconnect done", self.name)
 
     def _reset(self, reason: DisconnectReason) -> None:
         """Reset."""
@@ -833,7 +842,9 @@ class DKEYLock:
 
         if self._rx_segment:
             if DEBUG_COMMAND_FRAMING:
-                _LOGGER.info("RX: segment: %02x: %s", characteristic.handle, data.hex())
+                _LOGGER.debug(
+                    "RX: segment: %02x: %s", characteristic.handle, data.hex()
+                )
             if self._rx_segment_cmd_id != data[0]:
                 _LOGGER.warning(
                     "RX: got %s, expected %s", data[0] & 0x7F, self._rx_segment_cmd_id
