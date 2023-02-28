@@ -145,7 +145,7 @@ class AssociateProcedure(BaseProcedure):
 
         ack_fut = self._lock.receive_once(cmds.AckRsp)
         auth_check_fut = self._lock.receive_once(cmds.AuthCheckCmd)
-        self._lock.set_crypto(crypto, 1)
+        self._lock.set_crypto(crypto, 2)
         await self._lock.send_cmd(cmds.AuthPinChallengeReplyCmd(reply))
         await ack_fut
         if ack_fut.result().error_code != ErrorCode.SUCCESS:
@@ -238,12 +238,11 @@ class AuthenticateProcedure(BaseProcedure):
         await asyncio.gather(ident_cmd_fut, ident_rsp_fut)
         self._lock.on_identification(ident_rsp_fut.result())
 
+        auth_challenge_fut = self._lock.receive_once(cmds.AuthChallengeCmd)
+        not_associated_fut = self._lock.receive_once(cmds.NotAssociatedCmd)
         await self._lock.send_cmd(
             cmds.GetIdentificationRsp.defaults(self._key_holder_id)
         )
-
-        auth_challenge_fut = self._lock.receive_once(cmds.AuthChallengeCmd)
-        not_associated_fut = self._lock.receive_once(cmds.NotAssociatedCmd)
 
         done, pending = await asyncio.wait(
             (auth_challenge_fut, not_associated_fut),
@@ -262,9 +261,8 @@ class AuthenticateProcedure(BaseProcedure):
         auth_challenge_accepted_fut = self._lock.receive_once(
             cmds.AuthChallengeAcceptedCmd
         )
+        self._lock.set_crypto(crypto, 1)
         await self._lock.send_cmd(cmds.AuthChallengeRsp(reply))
-
-        self._lock.set_crypto(crypto, 0)
 
         await auth_challenge_accepted_fut
         _LOGGER.debug("%s: Challenge accepted", self._lock.name)
@@ -910,6 +908,9 @@ class DKEYLock:
 
         self._fragmentize(char_specifier, data[0], data[2:])
 
+        crypto_enabled = self._crypto and not self._crypto_delay
+        if self._crypto and self._crypto_delay:
+            self._crypto_delay -= 1
         while self._tx_queue:
             dest, frag = self._tx_queue.popleft()
             if DEBUG_COMMAND_FRAMING:
@@ -917,7 +918,7 @@ class DKEYLock:
             got_fragment_ack: asyncio.Future[cmds.AckRsp] | None = None
             if frag[0] & 0x80:
                 got_fragment_ack = self.receive_once(cmds.AckRsp)
-            if self._crypto and not self._crypto_delay:
+            if self._crypto and crypto_enabled:
                 frag = self._crypto.encrypt_send(frag)
                 if DEBUG_COMMAND_CRYPT:
                     _LOGGER.debug("TX ct: %s: %s", dest, frag.hex())
