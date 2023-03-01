@@ -547,7 +547,7 @@ class DKEYLock:
 
     def _fire_callbacks(self, notifications: Notifications) -> None:
         """Fire the callbacks."""
-        _LOGGER.warning("_fire_callbacks")
+        _LOGGER.debug("_fire_callbacks")
         for callback in self._callbacks:
             callback(notifications)
 
@@ -948,7 +948,7 @@ class DKEYLock:
     def on_notification(self, notifications: Notifications) -> None:
         """Handle status notifications from the lock."""
         self.state.update(notifications)
-        _LOGGER.info("Lock state: %s", self.state)
+        _LOGGER.debug("Lock state: %s", self.state)
         self._fire_callbacks(notifications)
 
     def receive_notifications(
