@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name         = "py-dormakaba-dkey"
-version      = "1.0.3"
+version      = "1.0.4"
 license      = {text = "MIT"}
 description  = "API to interact with a Dormakaba dkey lock via bluetooth"
 readme       = "README.md"
