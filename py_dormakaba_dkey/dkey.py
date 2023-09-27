@@ -63,6 +63,8 @@ DEFAULT_ATTEMPTS = 3
 
 ACTIVATION_CODE_ALLOWED = "BCDFGHJKLMNPQRSTVWXZ0123456789"
 
+SUPPORTED_PROTOCOL_VERSIONS = (26, 27)
+
 
 def device_filter(advertisement_data: AdvertisementData) -> bool:
     """Return True if the device is supported."""
@@ -936,7 +938,7 @@ class DKEYLock:
 
     def on_identification(self, identification: cmds.GetIdentificationRsp) -> None:
         """Handle identification from the lock."""
-        if identification.protocol_version != 27:
+        if identification.protocol_version not in SUPPORTED_PROTOCOL_VERSIONS:
             raise UnsupportedProtocolVersion(identification.protocol_version)
         self.device_info.sw_version = identification.sw_version
         self.device_info.device_id = f"{identification.key_holder_id.hex()}"
